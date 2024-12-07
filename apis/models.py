@@ -1,12 +1,42 @@
 from django.db import models
+from django.utils import timezone
+  
+class MyManager(models.Manager):
+    def get_queryset(self) -> models.QuerySet: 
+        return super().get_queryset().filter(is_deleted = False)
+   
+from django.db import models
+from django.utils import timezone
 
 class Actor(models.Model):
     act_fname = models.CharField(max_length=50)
-    act_iname  = models.CharField(max_length=50)
+    act_iname = models.CharField(max_length=50)
     act_gender = models.CharField(max_length=50)
-    
+    is_deleted = models.BooleanField(default=False)
+    deleted_at = models.DateTimeField(null=True, blank=True)
+
+    def soft_delete(self):
+        """Perform a soft delete (mark as deleted)."""
+        self.is_deleted = True
+        self.deleted_at = timezone.now()
+        self.save()
+
+    def hard_delete(self):
+        """Perform a hard delete (remove permanently)."""
+        super().delete()  # This removes the object from the database
+
+    def restore(self):
+        """Restore a soft-deleted object."""
+        self.is_deleted = False
+        self.deleted_at = None
+        self.save()
+
     def __str__(self):
         return self.act_fname
+
+    
+class Test(Actor):
+    objects = MyManager()
     
 class Director(models.Model):
     dir_fname = models.CharField(max_length=50)

@@ -5,6 +5,7 @@ class Actorserial(ModelSerializer):
     class Meta:
         model = Actor
         fields = "__all__"
+        read_only_fields = ("is_deleted","deleted_at")
         
 class DirectorrSerial(ModelSerializer):
     class Meta:

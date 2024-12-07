@@ -1,10 +1,32 @@
 from rest_framework.generics import ListAPIView,CreateAPIView,RetrieveAPIView,RetrieveUpdateAPIView,DestroyAPIView
 from .serialaizes import *
 from .models import *
+from rest_framework.decorators import action
+from rest_framework.response import Response
+from rest_framework import status  
+
 
 class ActorListAPIVIEW(ListAPIView):
-    queryset =Actor.objects.all().order_by("-id")
+    queryset =Actor.objects.filter(is_deleted = False).order_by("-id")
     serializer_class = Actorserial
+    
+    @action(detail=True,methods = "POST")
+    def restore(self,request,pk=None):
+        actor = Actor.objects.filter(id=pk).first()
+        if actor and actor.is_deleted:
+            actor.restore()
+            return Response("object restored", status=status.HTTP_200_OK) 
+        
+    @action(detail=True, methods=['delete'])
+    def hard_delete(self, request, pk=None):
+        try:
+            actor = Actor.objects.get(pk=pk)
+            actor.delete()  
+            return Response({"message": "Actor deleted permanently."}, status=status.HTTP_204_NO_CONTENT)
+        except Actor.DoesNotExist:
+            return Response({"error": "Actor not found."}, status=status.HTTP_404_NOT_FOUND)
+    
+    
     
 class ActorCreateAPIVIEW(CreateAPIView):
     serializer_class = Actorserial
@@ -218,3 +240,11 @@ class Movie_directionRetrieveUpdateAPIView(RetrieveUpdateAPIView):
 class Movie_directionDestroyAPIView(DestroyAPIView):
     queryset =   Movie_direction.objects.all()
     serializer_class =   Movie_direction.objects.all()
+    
+    
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.views import APIView
+from rest_framework.response import Response
+from rest_framework.decorators import api_view
+
+
